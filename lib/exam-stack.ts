@@ -108,7 +108,11 @@ export class ExamStack extends cdk.Stack {
     // endpoint for cinemaId
     const specificMovieEndpoint = moviesEndpoint.addResource("{cinemaId}");
 
-    specificMovieEndpoint.addMethod(
+
+    // endpoint for cinemaId/movies
+    const movieReviewEndpointCinema = specificMovieEndpoint.addResource("movies");
+
+    movieReviewEndpointCinema.addMethod(
       "GET",
       new apig.LambdaIntegration(getCinemaIdFn, { proxy: true })
     );
