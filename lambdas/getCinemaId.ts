@@ -10,12 +10,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     // Print Event
     console.log("Event: ", JSON.stringify(event));
     const pathParameters = event?.pathParameters;
-    const movieId = pathParameters?.movieId
-      ? parseInt(pathParameters.movieId)
+    const cinemaId = pathParameters?.cinemaId
+      ? parseInt(pathParameters.cinemaId)
       : undefined;
 
-    // Check if movieId is provided
-    if (!movieId) {
+    // Check if cinemaId is provided
+    if (!cinemaId) {
       return {
         statusCode: 400,
         headers: {
@@ -25,13 +25,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
-    // Query to fetch reviews for the specified movieId
+    // Query to fetch reviews for the specified cinemaId
     const commandOutput = await ddbDocClient.send(
       new QueryCommand({
         TableName: process.env.TABLE_NAME, // Table for reviews
-        KeyConditionExpression: "movieId = :movieId",
+        KeyConditionExpression: "cinemaId = :cinemaId",
         ExpressionAttributeValues: {
-          ":movieId": movieId,
+          ":cinemaId": cinemaId,
         },
       })
     );
@@ -46,7 +46,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          Message: "No reviews found for the specified movieId",
+          Message: "No reviews found for the specified cinemaId",
         }),
       };
     }
