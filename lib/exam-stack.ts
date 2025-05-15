@@ -17,9 +17,33 @@ export class ExamStack extends cdk.Stack {
     const table = new dynamodb.Table(this, "CinemasTable", {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       partitionKey: { name: "cinemaId", type: dynamodb.AttributeType.NUMBER },
+      sortKey: { name: "movieId", type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName: "CinemaTable",
-    });
+ });
+
+  table.addLocalSecondaryIndex({
+      indexName: "periodIx",
+      sortKey: { name: "period", type: dynamodb.AttributeType.STRING },
+ });
+
+
+ // Functions
+    const getCinemaIdFn = new lambdanode.NodejsFunction(
+      this,
+      "GetCinemaIdFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_22_X,
+        entry: `${__dirname}/../lambdas/getCinemaId.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: table.tableName,
+          REGION: "eu-west-1",
+        },
+      }
+    );
 
 
     const question1Fn = new lambdanode.NodejsFunction(this, "QuestionFn", {
@@ -32,6 +56,8 @@ export class ExamStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
+
+    table.grantReadData(getCinemaIdFn);
 
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
@@ -49,6 +75,9 @@ export class ExamStack extends cdk.Stack {
       }),
     });
 
+
+    
+
     const api = new apig.RestApi(this, "ExamAPI", {
       description: "Exam api",
       deployOptions: {
@@ -61,6 +90,28 @@ export class ExamStack extends cdk.Stack {
         allowOrigins: ["*"],
       },
     });
+
+
+    // You are required to add a new endpoint to the REST API, defined as follows:
+
+// GET /cinemas/{cinemaId}/movies?movie=movieId - Get the details of the movie with the specified id
+// for the particular cinema, e.g. GET /cinemas/1001/movies?movieId=c5002 - get the details
+// of movie c5002 for cinema 1001. Note that when the movie query string is omitted, the API should
+// return all the movies for the cinema.
+
+
+    // Gateway endpoints
+
+    // Cinema endpoint
+    const moviesEndpoint = api.root.addResource("cinemas");
+
+    // endpoint for cinemaId
+    const specificMovieEndpoint = moviesEndpoint.addResource("{cinemaId}");
+
+    specificMovieEndpoint.addMethod(
+      "GET",
+      new apig.LambdaIntegration(getCinemaIdFn, { proxy: true })
+    );
 
   }
 }

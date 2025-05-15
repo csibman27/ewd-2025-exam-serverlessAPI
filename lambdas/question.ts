@@ -8,6 +8,16 @@ import {
 import schema from "../shared/types.schema.json";
 const client = createDDbDocClient();
 
+
+
+// You are required to add a new endpoint to the REST API, defined as follows:
+
+// GET /cinemas/{cinemaId}/movies?movie=movieId - Get the details of the movie with the specified id
+// for the particular cinema, e.g. GET /cinemas/1001/movies?movieId=c5002 - get the details
+// of movie c5002 for cinema 1001. Note that when the movie query string is omitted, the API should
+// return all the movies for the cinema.
+
+
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
     console.log("Event: ", JSON.stringify(event));
